@@ -50,6 +50,7 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
     if (translated) {
       chrome.tabs.sendMessage(tab.id, {
         type: "SHOW_TRANSLATION",
+        originalText: selectedText,
         translation: translated
       });
     }
