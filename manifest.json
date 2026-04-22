@@ -1,0 +1,24 @@
+{
+  "manifest_version": 3,
+  "name": "My Local Translator",
+  "version": "0.1.0",
+  "description": "Translate selected text using local LM Studio",
+  "permissions": [
+    "activeTab",
+    "contextMenus",
+    "scripting"
+  ],
+  "host_permissions": [
+    "http://127.0.0.1:1234/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}
