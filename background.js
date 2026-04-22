@@ -8,7 +8,22 @@ chrome.runtime.onInstalled.addListener(() => {
   });
 });
 
+const translationCache = new Map();
+
 async function translateText(text) {
+  const normalizedText = text.trim();
+
+  if (!normalizedText) {
+    return "";
+  }
+
+  if (translationCache.has(normalizedText)) {
+    console.log("快取命中：", normalizedText);
+    return translationCache.get(normalizedText);
+  }
+
+  console.log("快取未命中，呼叫模型：", normalizedText);
+
   const response = await fetch("http://127.0.0.1:1234/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -23,7 +38,7 @@ async function translateText(text) {
         },
         {
           role: "user",
-          content: text
+          content: normalizedText
         }
       ],
       temperature: 0.2,
@@ -36,7 +51,13 @@ async function translateText(text) {
   }
 
   const data = await response.json();
-  return data.choices?.[0]?.message?.content?.trim();
+  const translated = data.choices?.[0]?.message?.content?.trim();
+
+  if (translated) {
+    translationCache.set(normalizedText, translated);
+  }
+
+  return translated;
 }
 
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {

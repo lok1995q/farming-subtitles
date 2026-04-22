@@ -60,31 +60,42 @@ function ensureOverlay() {
   overlay = document.createElement("div");
   overlay.id = "yt-translation-overlay";
   overlay.style.position = "fixed";
-  overlay.style.top = "80px";
-  overlay.style.right = "20px";
+  overlay.style.left = "50%";
+  overlay.style.bottom = "110px";
+  overlay.style.transform = "translateX(-50%)";
   overlay.style.zIndex = "999999";
-  overlay.style.maxWidth = "360px";
-  overlay.style.background = "rgba(20, 20, 20, 0.9)";
-  overlay.style.color = "#fff";
-  overlay.style.padding = "12px 14px";
+  overlay.style.maxWidth = "70vw";
+  overlay.style.minWidth = "240px";
+  overlay.style.padding = "6px 14px";
+  overlay.style.background = "rgba(0, 0, 0, 0.55)";
+  overlay.style.color = "#ffffff";
   overlay.style.borderRadius = "10px";
-  overlay.style.boxShadow = "0 4px 12px rgba(0,0,0,0.3)";
-  overlay.style.fontSize = "14px";
+  overlay.style.boxShadow = "0 4px 12px rgba(0,0,0,0.25)";
+  overlay.style.fontSize = "24px";
+  overlay.style.fontWeight = "600";
   overlay.style.lineHeight = "1.5";
+  overlay.style.textAlign = "center";
   overlay.style.whiteSpace = "normal";
-  overlay.style.fontFamily = "Arial, sans-serif";
+  overlay.style.pointerEvents = "none";
+  overlay.style.fontFamily =
+    "'PingFang TC', 'Microsoft JhengHei', 'Noto Sans TC', Arial, sans-serif";
+  overlay.style.textShadow = "0 2px 6px rgba(0,0,0,0.9)";
+  overlay.style.transition = "opacity 0.15s ease";
+  overlay.style.opacity = "0";
 
   document.body.appendChild(overlay);
   return overlay;
 }
 
-function showTranslation(original, translation) {
+function showTranslation(translation) {
   const box = ensureOverlay();
-  box.innerHTML = `
-    <div style="font-size:12px;color:#bbb;margin-bottom:6px;">YouTube 字幕翻譯</div>
-    <div style="margin-bottom:8px;"><strong>原文：</strong> ${original}</div>
-    <div><strong>譯文：</strong> ${translation}</div>
-  `;
+  box.textContent = translation;
+  box.style.opacity = "1";
+}
+
+function hideTranslation() {
+  if (!overlay) return;
+  overlay.style.opacity = "0";
 }
 
 async function requestTranslation(text) {
@@ -113,14 +124,18 @@ async function requestTranslation(text) {
 
 setInterval(async () => {
   const text = getCurrentSubtitleText();
-  if (!text) return;
+
+  if (!text) {
+    hideTranslation();
+    return;
+  }
 
   if (shouldOutput(text)) {
     console.log("送去翻譯的新字幕：", text);
 
     try {
       const translation = await requestTranslation(text);
-      showTranslation(text, translation);
+      showTranslation(translation);
     } catch (error) {
       console.error("字幕翻譯錯誤：", error);
     }
