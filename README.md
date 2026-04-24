@@ -15,6 +15,7 @@
 - 💾 Translation cache — faster repeated content / 翻譯快取，重複內容更快
 - ⏸️ Pause button — toggle translation on/off anytime / 暫停按鈕，隨時開關翻譯
 - 🔄 Auto-reset on video switch / 切換影片自動重置
+- 🌐 Traditional Chinese output only (for now) / 目前只支援繁體中文輸出
 
 ---
 
@@ -103,6 +104,7 @@
 ## ⚠️ Known Limitations / 已知限制
 
 - Requires LM Studio running locally / 需要本機運行 LM Studio
+- Currently only supports Traditional Chinese output / 目前只支援繁體中文翻譯輸出
 - Works best with English subtitles / 最適合英文字幕
 - Auto-generated (ASR) subtitles may have lower accuracy / 自動產生字幕的準確度較低
 - Translation speed depends on your hardware / 翻譯速度取決於你的硬體
