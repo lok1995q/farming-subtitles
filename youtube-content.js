@@ -85,6 +85,8 @@ let isStreaming = false;
 let currentTranslatingText = "";
 let isPaused = false;
 let pauseButton = null;
+let subtitleDebounceTimer = null;
+let lastSentSubtitle = "";
 
 function resetState() {
   console.log("YouTube 影片切換，重置狀態");
@@ -96,10 +98,15 @@ function resetState() {
   streamingBuffer = "";
   isStreaming = false;
   currentTranslatingText = "";
+  lastSentSubtitle = "";
+
+  if (subtitleDebounceTimer) {
+    clearTimeout(subtitleDebounceTimer);
+    subtitleDebounceTimer = null;
+  }
 
   hideTranslation();
 
-  // 重新注入 page bridge，取得新影片的 captionTracks
   const existing = document.getElementById("yt-page-bridge-script");
   if (existing) existing.remove();
 
@@ -166,124 +173,6 @@ function cleanSubtitleText(raw) {
   return text;
 }
 
-// ===== 字幕輸出判斷 =====
-
-function isMostlyPrefix(shorter, longer) {
-  if (!shorter || !longer) return false;
-  if (shorter.length < 4) return false;
-  if (shorter.length >= longer.length) return false;
-
-  const prefix = longer.slice(0, shorter.length);
-  let sameCount = 0;
-
-  for (let i = 0; i < shorter.length; i++) {
-    if (shorter[i] === prefix[i]) sameCount++;
-  }
-
-  const ratio = sameCount / shorter.length;
-  return ratio > 0.8;
-}
-
-// 保留供未來句分割優化使用
-function isClearlyNewSentence(prev, current) {
-  if (!prev) return true;
-
-  const prevTrim = prev.trim();
-  const currTrim = current.trim();
-
-  if (prevTrim === currTrim) return false;
-
-  const prevLastPunct = /[.!?…]$/.test(prevTrim);
-  const currHasNewClause = /[,;:]/.test(currTrim) && !/[,;:]/.test(prevTrim);
-
-  if (prevLastPunct && !isMostlyPrefix(prevTrim, currTrim)) {
-    return true;
-  }
-
-  if (currHasNewClause && !isMostlyPrefix(prevTrim, currTrim)) {
-    return true;
-  }
-
-  if (!isMostlyPrefix(prevTrim, currTrim) && currTrim.length > prevTrim.length + 12) {
-    return true;
-  }
-
-  return false;
-}
-
-function shouldOutput(newText) {
-  if (!newText) return false;
-
-  const now = Date.now();
-  const text = newText.trim();
-
-  if (text.length < 2) {
-    lastSubtitleText = text;
-    return false;
-  }
-
-  if (!lastStableSubtitle) {
-    lastSubtitleText = text;
-    lastStableSubtitle = text;
-    lastOutputTime = now;
-    return true;
-  }
-
-  if (text === lastStableSubtitle) {
-    lastSubtitleText = text;
-    return false;
-  }
-
-  const sameAsLastSeen = text === lastSubtitleText;
-  lastSubtitleText = text;
-
-  if (sameAsLastSeen) {
-    return false;
-  }
-
-  const timeSinceLastOutput = now - lastOutputTime;
-  const mostlyPrefix = isMostlyPrefix(lastStableSubtitle, text);
-  const lengthDiff = text.length - lastStableSubtitle.length;
-
-  if (isAsrTrack) {
-    if (mostlyPrefix && lengthDiff > 0) {
-      if (lengthDiff < 5 && timeSinceLastOutput < 350) {
-        return false;
-      }
-    }
-
-    if (text.length <= lastStableSubtitle.length - 6 && timeSinceLastOutput < 250) {
-      return false;
-    }
-  } else {
-    if (mostlyPrefix && lengthDiff > 0 && lengthDiff < 3 && timeSinceLastOutput < 150) {
-      return false;
-    }
-  }
-
-  if (isAsrTrack) {
-    if (mostlyPrefix && lengthDiff > 0 && lengthDiff < 10 && timeSinceLastOutput < 700) {
-      return false;
-    }
-
-    const hasStrongPunct = /[.!?…]$/.test(text);
-    const hasComma = /[,;:]/.test(text);
-
-    if (!hasStrongPunct && !hasComma && timeSinceLastOutput < 600 && lengthDiff < 16) {
-      return false;
-    }
-  }
-    // 兩次翻譯之間的最短間隔
-  const minInterval = isAsrTrack ? 800 : 300;
-  if (timeSinceLastOutput < minInterval) {
-    return false;
-  }
-
-  lastStableSubtitle = text;
-  lastOutputTime = now;
-  return true;
-}
-
 // ===== Overlay 顯示 =====
 
 function ensureOverlay() {
@@ -324,7 +213,6 @@ function updateOverlayPosition() {
   if (!overlay) return;
 
   const captionWindow = document.querySelector(".caption-window");
-
   if (!captionWindow) return;
 
   const captionRect = captionWindow.getBoundingClientRect();
@@ -332,9 +220,18 @@ function updateOverlayPosition() {
 
   if (captionRect.height === 0) return;
 
-  // 把 overlay 放在字幕上方 8px
+  // 垂直：貼在字幕上方 8px
   const newBottom = Math.round(viewportHeight - captionRect.top + 8);
   overlay.style.bottom = `${newBottom}px`;
+
+  // 水平：對齊字幕的水平中心，而不是 viewport 中心
+  const captionCenterX = captionRect.left + captionRect.width / 2;
+  overlay.style.left = `${captionCenterX}px`;
+  overlay.style.transform = "translateX(-50%)";
+
+  // 寬度：最多和字幕一樣寬，不要更寬
+  const maxWidth = Math.min(captionRect.width + 40, window.innerWidth * 0.7);
+  overlay.style.maxWidth = `${maxWidth}px`;
 }
 
 function ensurePauseButton() {
@@ -437,36 +334,56 @@ setInterval(() => {
     if (!isStreaming) {
       hideTranslation();
     }
+    if (subtitleDebounceTimer) {
+      clearTimeout(subtitleDebounceTimer);
+      subtitleDebounceTimer = null;
+    }
     return;
   }
 
   if (isPaused) return;
   if (isStreaming) return;
 
-  if (shouldOutput(text)) {
-    console.log("送去翻譯的新字幕：", text);
+  // 如果字幕沒有變化，不需要重設計時器
+  if (text === lastSubtitleText) return;
+  lastSubtitleText = text;
 
-    if (translationCache.has(text)) {
-      showTranslation(translationCache.get(text));
-      console.log("使用翻譯快取結果");
-      currentTranslatingText = "";
+  // 每次字幕有變化，重設 debounce 計時器
+  if (subtitleDebounceTimer) {
+    clearTimeout(subtitleDebounceTimer);
+  }
+
+  subtitleDebounceTimer = setTimeout(() => {
+    subtitleDebounceTimer = null;
+
+    // 計時器到期，字幕已穩定，準備送翻譯
+    const stableText = getCurrentSubtitleText();
+    if (!stableText) return;
+    if (stableText === lastSentSubtitle) return;
+
+    if (translationCache.has(stableText)) {
+      showTranslation(translationCache.get(stableText));
+      lastSentSubtitle = stableText;
       return;
     }
 
     if (
       currentTranslatingText &&
-      text.startsWith(currentTranslatingText) &&
-      text.length - currentTranslatingText.length < 20
+      stableText.startsWith(currentTranslatingText) &&
+      stableText.length - currentTranslatingText.length < 20
     ) {
-      console.log("延長版，跳過重複翻譯：", text);
       return;
     }
 
-    currentTranslatingText = text;
+    console.log("送去翻譯的穩定字幕：", stableText);
+    lastSentSubtitle = stableText;
+    currentTranslatingText = stableText;
+    lastStableSubtitle = stableText;
 
     chrome.runtime.sendMessage({
       type: "YT_TRANSLATE_SUBTITLE_STREAM",
-      text: text
+      text: stableText
     });
-  }
+  }, 400);
+
 }, 200);
