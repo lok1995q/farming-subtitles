@@ -32,7 +32,7 @@ async function translateText(text) {
       messages: [
         {
           role: "system",
-          content: "You are a translation tool. Translate the user's English text into Traditional Chinese (繁體中文). Output only the translated text, nothing else."
+          content: "You are a subtitle translation tool. Translate the user's English subtitle text into natural, colloquial Traditional Chinese (繁體中文). Keep it concise and natural, as if spoken. Output only the translated text, nothing else."
         },
         {
           role: "user",

@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "My Local Translator",
+  "name": "Farming Subtitles",
   "version": "0.1.0",
-  "description": "Translate selected text using local LM Studio",
+  "description": "Local AI subtitle translation for YouTube. Safe, private, and steady. Just like farming.",
   "permissions": [
     "activeTab",
     "contextMenus",
