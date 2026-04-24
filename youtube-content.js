@@ -78,6 +78,8 @@ let isAsrTrack = false;
 let streamingBuffer = "";
 let isStreaming = false;
 let currentTranslatingText = "";
+let isPaused = false;
+let pauseButton = null;
 
 const translationCache = new Map();
 
@@ -285,6 +287,56 @@ function ensureOverlay() {
   return overlay;
 }
 
+function ensurePauseButton() {
+  if (pauseButton) return pauseButton;
+
+  pauseButton = document.createElement("div");
+  pauseButton.id = "yt-translation-pause-btn";
+  pauseButton.textContent = "譯 ON";
+  pauseButton.style.position = "fixed";
+  pauseButton.style.bottom = "160px";
+  pauseButton.style.right = "20px";
+  pauseButton.style.zIndex = "999999";
+  pauseButton.style.padding = "4px 10px";
+  pauseButton.style.background = "rgba(0, 0, 0, 0.5)";
+  pauseButton.style.color = "#ffffff";
+  pauseButton.style.borderRadius = "6px";
+  pauseButton.style.fontSize = "12px";
+  pauseButton.style.fontWeight = "600";
+  pauseButton.style.cursor = "pointer";
+  pauseButton.style.userSelect = "none";
+  pauseButton.style.opacity = "0.4";
+  pauseButton.style.transition = "opacity 0.2s ease";
+  pauseButton.style.fontFamily = "Arial, sans-serif";
+  pauseButton.style.pointerEvents = "auto";
+
+  pauseButton.addEventListener("mouseenter", () => {
+    pauseButton.style.opacity = "1";
+  });
+
+  pauseButton.addEventListener("mouseleave", () => {
+    pauseButton.style.opacity = isPaused ? "1" : "0.4";
+  });
+
+  pauseButton.addEventListener("click", () => {
+    isPaused = !isPaused;
+
+    if (isPaused) {
+      pauseButton.textContent = "譯 OFF";
+      pauseButton.style.opacity = "1";
+      pauseButton.style.background = "rgba(180, 0, 0, 0.7)";
+      hideTranslation();
+    } else {
+      pauseButton.textContent = "譯 ON";
+      pauseButton.style.opacity = "0.4";
+      pauseButton.style.background = "rgba(0, 0, 0, 0.5)";
+    }
+  });
+
+  document.body.appendChild(pauseButton);
+  return pauseButton;
+}
+
 function showTranslation(translation) {
   const box = ensureOverlay();
   box.textContent = translation;
@@ -325,6 +377,8 @@ chrome.runtime.onMessage.addListener((message) => {
 // ===== 字幕輪詢主迴圈 =====
 
 setInterval(() => {
+  ensurePauseButton();
+
   const text = getCurrentSubtitleText();
 
   if (!text) {
@@ -334,9 +388,10 @@ setInterval(() => {
     return;
   }
 
+  if (isPaused) return;
   if (isStreaming) return;
 
-    if (shouldOutput(text)) {
+  if (shouldOutput(text)) {
     console.log("送去翻譯的新字幕：", text);
 
     if (translationCache.has(text)) {
@@ -346,7 +401,6 @@ setInterval(() => {
       return;
     }
 
-    // 如果新字幕只是目前正在翻譯的句子的延長版，就不要重複送
     if (
       currentTranslatingText &&
       text.startsWith(currentTranslatingText) &&
