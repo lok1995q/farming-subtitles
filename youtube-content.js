@@ -69,6 +69,11 @@ setTimeout(() => {
   injectPageBridge();
 }, 3000);
 
+// 監聽 YouTube SPA 切換影片
+window.addEventListener("yt-navigate-finish", () => {
+  resetState();
+});
+
 // ===== 全域變數（只宣告一次）=====
 let lastSubtitleText = "";
 let lastStableSubtitle = "";
@@ -80,6 +85,28 @@ let isStreaming = false;
 let currentTranslatingText = "";
 let isPaused = false;
 let pauseButton = null;
+
+function resetState() {
+  console.log("YouTube 影片切換，重置狀態");
+
+  lastSubtitleText = "";
+  lastStableSubtitle = "";
+  lastOutputTime = 0;
+  isAsrTrack = false;
+  streamingBuffer = "";
+  isStreaming = false;
+  currentTranslatingText = "";
+
+  hideTranslation();
+
+  // 重新注入 page bridge，取得新影片的 captionTracks
+  const existing = document.getElementById("yt-page-bridge-script");
+  if (existing) existing.remove();
+
+  setTimeout(() => {
+    injectPageBridge();
+  }, 2000);
+}
 
 const translationCache = new Map();
 
@@ -246,6 +273,11 @@ function shouldOutput(newText) {
       return false;
     }
   }
+    // 兩次翻譯之間的最短間隔
+  const minInterval = isAsrTrack ? 800 : 300;
+  if (timeSinceLastOutput < minInterval) {
+    return false;
+  }
 
   lastStableSubtitle = text;
   lastOutputTime = now;
@@ -263,6 +295,7 @@ function ensureOverlay() {
   overlay.style.left = "50%";
   overlay.style.bottom = "110px";
   overlay.style.transform = "translateX(-50%)";
+  overlay.style.transition = "bottom 0.1s ease, opacity 0.15s ease";
   overlay.style.zIndex = "999999";
   overlay.style.maxWidth = "70vw";
   overlay.style.minWidth = "240px";
@@ -285,6 +318,23 @@ function ensureOverlay() {
 
   document.body.appendChild(overlay);
   return overlay;
+}
+
+function updateOverlayPosition() {
+  if (!overlay) return;
+
+  const captionWindow = document.querySelector(".caption-window");
+
+  if (!captionWindow) return;
+
+  const captionRect = captionWindow.getBoundingClientRect();
+  const viewportHeight = window.innerHeight;
+
+  if (captionRect.height === 0) return;
+
+  // 把 overlay 放在字幕上方 8px
+  const newBottom = Math.round(viewportHeight - captionRect.top + 8);
+  overlay.style.bottom = `${newBottom}px`;
 }
 
 function ensurePauseButton() {
@@ -341,6 +391,7 @@ function showTranslation(translation) {
   const box = ensureOverlay();
   box.textContent = translation;
   box.style.opacity = "1";
+  updateOverlayPosition();
 }
 
 function hideTranslation() {
@@ -378,6 +429,7 @@ chrome.runtime.onMessage.addListener((message) => {
 
 setInterval(() => {
   ensurePauseButton();
+  updateOverlayPosition();
 
   const text = getCurrentSubtitleText();
 
