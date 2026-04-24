@@ -87,6 +87,7 @@ let isPaused = false;
 let pauseButton = null;
 let subtitleDebounceTimer = null;
 let lastSentSubtitle = "";
+let pendingSubtitle = "";
 
 function resetState() {
   console.log("YouTube 影片切換，重置狀態");
@@ -99,6 +100,7 @@ function resetState() {
   isStreaming = false;
   currentTranslatingText = "";
   lastSentSubtitle = "";
+  pendingSubtitle = "";
 
   if (subtitleDebounceTimer) {
     clearTimeout(subtitleDebounceTimer);
@@ -306,7 +308,7 @@ chrome.runtime.onMessage.addListener((message) => {
   }
 
     if (message.type === "YT_SUBTITLE_STREAM_CHUNK") {
-    if (message.done) {
+        if (message.done) {
       isStreaming = false;
       currentTranslatingText = "";
 
@@ -314,6 +316,28 @@ chrome.runtime.onMessage.addListener((message) => {
         showTranslation(streamingBuffer);
         translationCache.set(lastStableSubtitle, streamingBuffer);
       }
+
+      // 如果有排隊的字幕，立刻送去翻譯
+      if (pendingSubtitle && pendingSubtitle !== lastSentSubtitle) {
+        const toTranslate = pendingSubtitle;
+        pendingSubtitle = "";
+
+        if (translationCache.has(toTranslate)) {
+          showTranslation(translationCache.get(toTranslate));
+          lastSentSubtitle = toTranslate;
+        } else {
+          console.log("送去翻譯排隊字幕：", toTranslate);
+          lastSentSubtitle = toTranslate;
+          currentTranslatingText = toTranslate;
+          lastStableSubtitle = toTranslate;
+
+          chrome.runtime.sendMessage({
+            type: "YT_TRANSLATE_SUBTITLE_STREAM",
+            text: toTranslate
+          });
+        }
+      }
+
       return;
     }
 
@@ -367,11 +391,18 @@ setInterval(() => {
       return;
     }
 
-    if (
+        if (
       currentTranslatingText &&
       stableText.startsWith(currentTranslatingText) &&
       stableText.length - currentTranslatingText.length < 20
     ) {
+      return;
+    }
+
+    // 如果正在翻譯，先排隊
+    if (isStreaming) {
+      console.log("翻譯進行中，排隊等候：", stableText);
+      pendingSubtitle = stableText;
       return;
     }
 
