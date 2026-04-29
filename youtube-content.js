@@ -88,6 +88,7 @@ let pauseButton = null;
 let subtitleDebounceTimer = null;
 let lastSentSubtitle = "";
 let pendingSubtitle = "";
+let errorTimer = null;
 
 function resetState() {
   console.log("YouTube 影片切換，重置狀態");
@@ -105,6 +106,11 @@ function resetState() {
   if (subtitleDebounceTimer) {
     clearTimeout(subtitleDebounceTimer);
     subtitleDebounceTimer = null;
+  }
+
+  if (errorTimer) {
+    clearTimeout(errorTimer);
+    errorTimer = null;
   }
 
   hideTranslation();
@@ -293,6 +299,23 @@ function showTranslation(translation) {
   updateOverlayPosition();
 }
 
+function showError(message) {
+  const box = ensureOverlay();
+  box.textContent = message;
+  box.style.opacity = "1";
+  box.style.background = "rgba(180, 0, 0, 0.75)";
+
+  if (errorTimer) {
+    clearTimeout(errorTimer);
+  }
+
+  errorTimer = setTimeout(() => {
+    box.style.background = "rgba(0, 0, 0, 0.55)";
+    hideTranslation();
+    errorTimer = null;
+  }, 4000);
+}
+
 function hideTranslation() {
   if (!overlay) return;
   overlay.style.opacity = "0";
@@ -343,6 +366,18 @@ chrome.runtime.onMessage.addListener((message) => {
 
     streamingBuffer += message.chunk;
     // 不在這裡顯示，等 done 才一次顯示
+  }
+
+  if (message.type === "YT_TRANSLATION_ERROR") {
+    isStreaming = false;
+    currentTranslatingText = "";
+
+    if (message.errorType === "connection") {
+      showError("⚠️ 找不到本機 AI，請確認 LM Studio 已開啟");
+    } else {
+      showError("⚠️ 翻譯失敗，請稍後再試");
+    }
+    return;
   }
 });
 

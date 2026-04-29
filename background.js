@@ -227,9 +227,22 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     activeRequests++;
 
-    translateTextStreaming(message.text, tabId)
-      .catch((error) => {
+        translateTextStreaming(message.text, tabId)
+      .catch(error => {
         console.error("Streaming 翻譯失敗：", error);
+
+        // 判斷是連線失敗還是其他錯誤
+        const isConnectionError =
+          error.message.includes("fetch") ||
+          error.message.includes("Failed to fetch") ||
+          error.message.includes("NetworkError") ||
+          error.message.includes("ECONNREFUSED");
+
+        chrome.tabs.sendMessage(tabId, {
+          type: "YT_TRANSLATION_ERROR",
+          errorType: isConnectionError ? "connection" : "general",
+          message: error.message
+        });
       })
       .finally(() => {
         activeRequests--;
