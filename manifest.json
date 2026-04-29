@@ -6,11 +6,13 @@
   "permissions": [
     "activeTab",
     "contextMenus",
-    "scripting"
+    "scripting",
+    "storage"
   ],
   "host_permissions": [
     "http://127.0.0.1:1234/*"
   ],
+  "options_page": "options.html",
   "background": {
     "service_worker": "background.js"
   },

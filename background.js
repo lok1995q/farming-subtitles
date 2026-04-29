@@ -8,13 +8,27 @@ chrome.runtime.onInstalled.addListener(() => {
   });
 });
 
+const DEFAULT_SERVER_URL = "http://127.0.0.1:1234";
+const DEFAULT_MODEL_NAME = "phi-4-mini-instruct";
+
 const translationCache = new Map();
 const MAX_CONCURRENT = 1;
 let activeRequests = 0;
 
+function getSettings() {
+  return new Promise((resolve) => {
+    chrome.storage.sync.get(
+      {
+        serverUrl: DEFAULT_SERVER_URL,
+        modelName: DEFAULT_MODEL_NAME
+      },
+      (items) => resolve(items)
+    );
+  });
+}
+
 async function translateText(text) {
   const normalizedText = text.trim();
-
   if (!normalizedText) return "";
 
   if (translationCache.has(normalizedText)) {
@@ -22,17 +36,19 @@ async function translateText(text) {
     return translationCache.get(normalizedText);
   }
 
-  console.log("快取未命中，呼叫模型：", normalizedText);
+  const { serverUrl, modelName } = await getSettings();
+  console.log("快取未命中，呼叫模型：", modelName, normalizedText);
 
-  const response = await fetch("http://127.0.0.1:1234/v1/chat/completions", {
+  const response = await fetch(`${serverUrl}/v1/chat/completions`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: "phi-4-mini-instruct",
+      model: modelName,
       messages: [
         {
           role: "system",
-          content: "You are a subtitle translation tool. Translate the user's English subtitle text into natural, colloquial Traditional Chinese (繁體中文). Keep it concise and natural, as if spoken. Output only the translated text, nothing else."
+          content:
+            "You are a translation tool. Translate the user's English text into Traditional Chinese (繁體中文). Output only the translated text, nothing else."
         },
         {
           role: "user",
@@ -45,10 +61,12 @@ async function translateText(text) {
     })
   });
 
-  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}`);
+  }
 
   const data = await response.json();
-  const translated = data.choices?.[0]?.message?.content?.trim();
+  const translated = data.choices?.[0]?.message?.content?.trim() || "";
 
   if (translated) {
     translationCache.set(normalizedText, translated);
@@ -61,7 +79,6 @@ async function translateTextStreaming(text, tabId) {
   const normalizedText = text.trim();
   if (!normalizedText) return;
 
-  // 如果快取有，直接送完整結果，不用 streaming
   if (translationCache.has(normalizedText)) {
     console.log("快取命中（streaming path）：", normalizedText);
     const cached = translationCache.get(normalizedText);
@@ -74,15 +91,19 @@ async function translateTextStreaming(text, tabId) {
     return;
   }
 
-  const response = await fetch("http://127.0.0.1:1234/v1/chat/completions", {
+  const { serverUrl, modelName } = await getSettings();
+  console.log("streaming 呼叫模型：", modelName, normalizedText);
+
+  const response = await fetch(`${serverUrl}/v1/chat/completions`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: "phi-4-mini-instruct",
+      model: modelName,
       messages: [
         {
           role: "system",
-          content: "You are a translation tool. Translate the user's English text into Traditional Chinese (繁體中文). Output only the translated text, nothing else."
+          content:
+            "You are a translation tool. Translate the user's English text into Traditional Chinese (繁體中文). Output only the translated text, nothing else."
         },
         {
           role: "user",
@@ -95,14 +116,15 @@ async function translateTextStreaming(text, tabId) {
     })
   });
 
-  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}`);
+  }
 
   const reader = response.body.getReader();
   const decoder = new TextDecoder("utf-8");
   let fullText = "";
   let buffer = "";
 
-  // 先通知 content script 開始新的 streaming
   chrome.tabs.sendMessage(tabId, {
     type: "YT_SUBTITLE_STREAM_START"
   });
@@ -114,7 +136,7 @@ async function translateTextStreaming(text, tabId) {
     buffer += decoder.decode(value, { stream: true });
 
     const lines = buffer.split("\n");
-    buffer = lines.pop();
+    buffer = lines.pop() || "";
 
     for (const line of lines) {
       const trimmed = line.trim();
@@ -132,24 +154,22 @@ async function translateTextStreaming(text, tabId) {
 
           chrome.tabs.sendMessage(tabId, {
             type: "YT_SUBTITLE_STREAM_CHUNK",
-            chunk: chunk,
+            chunk,
             done: false
           });
         }
       } catch (e) {
-        // 忽略無法 parse 的行
+        // 忽略不能 parse 的 SSE 行
       }
     }
   }
 
-  // 結束
   chrome.tabs.sendMessage(tabId, {
     type: "YT_SUBTITLE_STREAM_CHUNK",
     chunk: "",
     done: true
   });
 
-  // 存進快取
   if (fullText) {
     translationCache.set(normalizedText, fullText);
   }
@@ -182,6 +202,7 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === "YT_TRANSLATE_SUBTITLE_STREAM") {
     const tabId = sender.tab?.id;
+
     if (!tabId) {
       sendResponse({ success: false, error: "no tab id" });
       return;
@@ -189,6 +210,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     if (activeRequests >= MAX_CONCURRENT) {
       const cached = translationCache.get(message.text?.trim());
+
       if (cached) {
         chrome.tabs.sendMessage(tabId, {
           type: "YT_SUBTITLE_STREAM_CHUNK",
@@ -198,6 +220,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       } else {
         console.log("並行限制：跳過這次字幕翻譯請求");
       }
+
       sendResponse({ success: true });
       return;
     }
@@ -205,7 +228,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     activeRequests++;
 
     translateTextStreaming(message.text, tabId)
-      .catch(error => {
+      .catch((error) => {
         console.error("Streaming 翻譯失敗：", error);
       })
       .finally(() => {
@@ -220,6 +243,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     (async () => {
       if (activeRequests >= MAX_CONCURRENT) {
         const cached = translationCache.get(message.text?.trim());
+
         if (cached) {
           sendResponse({ success: true, translation: cached });
         } else {

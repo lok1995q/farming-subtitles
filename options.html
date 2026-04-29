@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Farming Subtitles 設定</title>
+  <style>
+    body {
+      font-family: 'PingFang TC', 'Microsoft JhengHei', Arial, sans-serif;
+      max-width: 520px;
+      margin: 40px auto;
+      padding: 0 24px;
+      color: #222;
+      background: #f9f9f9;
+    }
+
+    h1 {
+      font-size: 22px;
+      margin-bottom: 6px;
+    }
+
+    .subtitle {
+      font-size: 13px;
+      color: #888;
+      margin-bottom: 32px;
+    }
+
+    label {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      margin-top: 20px;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 10px 12px;
+      font-size: 14px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      box-sizing: border-box;
+      background: #fff;
+    }
+
+    input[type="text"]:focus {
+      outline: none;
+      border-color: #4caf50;
+    }
+
+    .hint {
+      font-size: 12px;
+      color: #aaa;
+      margin-top: 4px;
+    }
+
+    .button-row {
+      margin-top: 28px;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    button {
+      padding: 10px 20px;
+      font-size: 14px;
+      font-weight: 600;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    #saveBtn {
+      background: #4caf50;
+      color: #fff;
+    }
+
+    #saveBtn:hover {
+      background: #43a047;
+    }
+
+    #testBtn {
+      background: #fff;
+      color: #333;
+      border: 1px solid #ddd;
+    }
+
+    #testBtn:hover {
+      background: #f0f0f0;
+    }
+
+    #status {
+      font-size: 13px;
+      margin-top: 16px;
+      padding: 10px 14px;
+      border-radius: 8px;
+      display: none;
+    }
+
+    #status.success {
+      background: #e8f5e9;
+      color: #2e7d32;
+      display: block;
+    }
+
+    #status.error {
+      background: #ffebee;
+      color: #c62828;
+      display: block;
+    }
+
+    #status.testing {
+      background: #fff8e1;
+      color: #f57f17;
+      display: block;
+    }
+
+    .divider {
+      border: none;
+      border-top: 1px solid #eee;
+      margin: 32px 0;
+    }
+
+    .section-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🌾 Farming Subtitles</h1>
+  <p class="subtitle">Local AI subtitle translation for YouTube</p>
+
+  <div class="section-title">LM Studio 設定 / LM Studio Settings</div>
+
+  abel for="serverUrl">
+    Server URL
+  </label>
+  <input
+    type="text"
+    id="serverUrl"
+    placeholder="http://127.0.0.1:1234"
+  />
+  <p class="hint">LM Studio 本機 server 的地址，預設為 http://127.0.0.1:1234</p>
+
+  abel for="modelName">
+    Model Name / 模型名稱
+  </label>
+  <input
+    type="text"
+    id="modelName"
+    placeholder="phi-4-mini-instruct"
+  />
+  <p class="hint">在 LM Studio Developer 頁面載入的模型名稱</p>
+
+  <div class="button-row">
+    <button id="saveBtn">儲存設定 / Save</button>
+    <button id="testBtn">測試連線 / Test Connection</button>
+  </div>
+
+  <div id="status"></div>
+
+  <hr class="divider" />
+
+  <div class="section-title">📖 快速設定指南 / Quick Setup Guide</div>
+  <ol style="font-size:13px; color:#555; line-height:2;">
+    >下載並安裝 <a href="https://lmstudio.ai" target="_blank">LM Studio</a></li>
+    >在 Discover 頁搜尋 <strong>Phi-4-mini-instruct</strong></li>
+    >下載 <strong>lmstudio-community</strong> 的 <strong>Q4_K_M</strong> 版本</li>
+    >進入 Developer 頁，載入模型並啟動 server</li>
+    >回到這裡點「測試連線」確認設定正確</li>
+  </ol>
+
+  <script src="options.js"></script>
+</body>
+</html>
