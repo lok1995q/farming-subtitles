@@ -10,21 +10,83 @@ chrome.runtime.onInstalled.addListener(() => {
 
 const DEFAULT_SERVER_URL = "http://127.0.0.1:1234";
 const DEFAULT_MODEL_NAME = "phi-4-mini-instruct";
+const DEFAULT_SYSTEM_PROMPT = "You are a subtitle translation tool. Translate the user's English subtitle text into natural, colloquial Traditional Chinese (繁體中文). Keep it concise and natural, as if spoken. Output only the translated text, nothing else.";
 
 const translationCache = new Map();
 const MAX_CONCURRENT = 1;
 let activeRequests = 0;
 
-function getSettings() {
+async function getSettings() {
   return new Promise((resolve) => {
     chrome.storage.sync.get(
       {
         serverUrl: DEFAULT_SERVER_URL,
-        modelName: DEFAULT_MODEL_NAME
+        modelName: DEFAULT_MODEL_NAME,
+        modelPrompts: {}
       },
-      (items) => resolve(items)
+      (items) => {
+        const modelName = items.modelName || DEFAULT_MODEL_NAME;
+        const modelPrompts = items.modelPrompts || {};
+        const systemPrompt = modelPrompts[modelName] || DEFAULT_SYSTEM_PROMPT;
+
+        resolve({
+          serverUrl: items.serverUrl || DEFAULT_SERVER_URL,
+          modelName,
+          systemPrompt
+        });
+      }
     );
   });
+}
+
+function isTranslateGemmaModel(modelName) {
+  return modelName === "translategemma-4b-it";
+}
+
+function buildRequestBody(modelName, systemPrompt, text, stream = false) {
+  const normalizedText = text.trim();
+
+  if (isTranslateGemmaModel(modelName)) {
+    return {
+      model: modelName,
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "text",
+              source_lang_code: "en",
+              target_lang_code: "zh-TW",
+              text: normalizedText
+            }
+          ]
+        }
+      ],
+      stream,
+      max_tokens: 80
+    };
+  }
+
+  return {
+    model: modelName,
+    messages: [
+      {
+        role: "system",
+        content: systemPrompt
+      },
+      {
+        role: "user",
+        content: normalizedText
+      }
+    ],
+    temperature: 0.2,
+    stream,
+    max_tokens: 80
+  };
+}
+
+function extractTranslation(modelName, data) {
+  return data.choices?.[0]?.message?.content?.trim() || "";
 }
 
 async function translateText(text) {
@@ -36,37 +98,24 @@ async function translateText(text) {
     return translationCache.get(normalizedText);
   }
 
-  const { serverUrl, modelName } = await getSettings();
+  const { serverUrl, modelName, systemPrompt } = await getSettings();
   console.log("快取未命中，呼叫模型：", modelName, normalizedText);
+
+  const requestBody = buildRequestBody(modelName, systemPrompt, normalizedText, false);
 
   const response = await fetch(`${serverUrl}/v1/chat/completions`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: modelName,
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are a translation tool. Translate the user's English text into Traditional Chinese (繁體中文). Output only the translated text, nothing else."
-        },
-        {
-          role: "user",
-          content: normalizedText
-        }
-      ],
-      temperature: 0.2,
-      stream: false,
-      max_tokens: 80
-    })
+    body: JSON.stringify(requestBody)
   });
 
   if (!response.ok) {
-    throw new Error(`HTTP ${response.status}`);
+    const errorText = await response.text();
+    throw new Error(`HTTP ${response.status}: ${errorText}`);
   }
 
   const data = await response.json();
-  const translated = data.choices?.[0]?.message?.content?.trim() || "";
+  const translated = extractTranslation(modelName, data);
 
   if (translated) {
     translationCache.set(normalizedText, translated);
@@ -91,33 +140,20 @@ async function translateTextStreaming(text, tabId) {
     return;
   }
 
-  const { serverUrl, modelName } = await getSettings();
+  const { serverUrl, modelName, systemPrompt } = await getSettings();
   console.log("streaming 呼叫模型：", modelName, normalizedText);
+
+  const requestBody = buildRequestBody(modelName, systemPrompt, normalizedText, true);
 
   const response = await fetch(`${serverUrl}/v1/chat/completions`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: modelName,
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are a translation tool. Translate the user's English text into Traditional Chinese (繁體中文). Output only the translated text, nothing else."
-        },
-        {
-          role: "user",
-          content: normalizedText
-        }
-      ],
-      temperature: 0.2,
-      stream: true,
-      max_tokens: 80
-    })
+    body: JSON.stringify(requestBody)
   });
 
   if (!response.ok) {
-    throw new Error(`HTTP ${response.status}`);
+    const errorText = await response.text();
+    throw new Error(`HTTP ${response.status}: ${errorText}`);
   }
 
   const reader = response.body.getReader();
@@ -134,7 +170,6 @@ async function translateTextStreaming(text, tabId) {
     if (done) break;
 
     buffer += decoder.decode(value, { stream: true });
-
     const lines = buffer.split("\n");
     buffer = lines.pop() || "";
 
@@ -159,7 +194,7 @@ async function translateTextStreaming(text, tabId) {
           });
         }
       } catch (e) {
-        // 忽略不能 parse 的 SSE 行
+        // ignore parse error
       }
     }
   }
@@ -227,11 +262,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     activeRequests++;
 
-        translateTextStreaming(message.text, tabId)
+    translateTextStreaming(message.text, tabId)
       .catch(error => {
         console.error("Streaming 翻譯失敗：", error);
 
-        // 判斷是連線失敗還是其他錯誤
         const isConnectionError =
           error.message.includes("fetch") ||
           error.message.includes("Failed to fetch") ||

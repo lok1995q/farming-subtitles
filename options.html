@@ -33,7 +33,8 @@
       margin-top: 20px;
     }
 
-    input[type="text"] {
+    input[type="text"],
+    select {
       width: 100%;
       padding: 10px 12px;
       font-size: 14px;
@@ -43,7 +44,8 @@
       background: #fff;
     }
 
-    input[type="text"]:focus {
+    input[type="text"]:focus,
+    select:focus {
       outline: none;
       border-color: #4caf50;
     }
@@ -126,6 +128,10 @@
       font-weight: 700;
       margin-bottom: 4px;
     }
+
+    .hidden {
+      display: none;
+    }
   </style>
 </head>
 <body>
@@ -134,9 +140,7 @@
 
   <div class="section-title">LM Studio 設定 / LM Studio Settings</div>
 
-  abel for="serverUrl">
-    Server URL
-  </label>
+  <label for="serverUrl">Server URL</label>
   <input
     type="text"
     id="serverUrl"
@@ -144,15 +148,69 @@
   />
   <p class="hint">LM Studio 本機 server 的地址，預設為 http://127.0.0.1:1234</p>
 
-  abel for="modelName">
-    Model Name / 模型名稱
-  </label>
-  <input
-    type="text"
-    id="modelName"
-    placeholder="phi-4-mini-instruct"
-  />
-  <p class="hint">在 LM Studio Developer 頁面載入的模型名稱</p>
+  <label for="modelPreset">Model / 模型</label>
+  <select id="modelPreset">
+    <option value="phi-4-mini-instruct">Phil（Phi-4-mini-instruct）</option>
+    <option value="translategemma-4b-it">Gemma（TranslateGemma 4B）</option>
+    <option value="other">Other（自訂模型）</option>
+  </select>
+  <p class="hint">選擇預設模型，或選 Other 自訂 model id</p>
+
+  <label for="systemPrompt">System Prompt</label>
+<textarea
+  id="systemPrompt"
+  rows="6"
+  style="
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 13px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-sizing: border-box;
+    background: #fff;
+    font-family: monospace;
+    resize: vertical;
+  "
+  placeholder="Enter system prompt for this model..."
+></textarea>
+<p class="hint">每個模型可以有各自的 Prompt，切換模型時自動載入 / Each model can have its own prompt</p>
+
+<label for="promptTemplate" style="margin-top: 16px;">
+  常用範本 / Quick Templates
+</label>
+<select
+  id="promptTemplate"
+  style="
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 14px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-sizing: border-box;
+    background: #fff;
+    margin-bottom: 4px;
+  "
+>
+  <option value="">-- 選擇範本 / Select Template --</option>
+  <option value="zh-TW">繁體中文（預設）</option>
+  <option value="zh-CN">簡體中文</option>
+  <option value="ja">日文</option>
+  <option value="ko">韓文</option>
+  <option value="fr">法文</option>
+  <option value="es">西班牙文</option>
+</select>
+
+<p class="hint">選擇後會自動填入上方 Prompt 欄位，記得點儲存 / Selecting will fill the prompt above, remember to save</p>
+
+  <div id="customModelWrap" class="hidden">
+    <label for="customModelName">Custom Model ID / 自訂模型名稱</label>
+    <input
+      type="text"
+      id="customModelName"
+      placeholder="例如：my-model-name"
+    />
+    <p class="hint">請輸入 LM Studio API 可識別的 model 名稱</p>
+  </div>
 
   <div class="button-row">
     <button id="saveBtn">儲存設定 / Save</button>
@@ -164,12 +222,11 @@
   <hr class="divider" />
 
   <div class="section-title">📖 快速設定指南 / Quick Setup Guide</div>
-  <ol style="font-size:13px; color:#555; line-height:2;">
-    >下載並安裝 <a href="https://lmstudio.ai" target="_blank">LM Studio</a></li>
-    >在 Discover 頁搜尋 <strong>Phi-4-mini-instruct</strong></li>
-    >下載 <strong>lmstudio-community</strong> 的 <strong>Q4_K_M</strong> 版本</li>
-    >進入 Developer 頁，載入模型並啟動 server</li>
-    >回到這裡點「測試連線」確認設定正確</li>
+  <ol style="font-size:13px; color:#555; line-height:2; padding-left: 20px;">
+    <li>下載並安裝 <a href="https://lmstudio.ai" target="_blank" rel="noopener noreferrer">LM Studio</a></li>
+    <li>在 LM Studio 載入你要使用的模型</li>
+    <li>進入 Developer 頁，啟動 server</li>
+    <li>回到這裡選擇模型後，點「測試連線」確認設定正確</li>
   </ol>
 
   <script src="options.js"></script>
