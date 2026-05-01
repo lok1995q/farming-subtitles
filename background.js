@@ -16,16 +16,33 @@ const translationCache = new Map();
 const MAX_CONCURRENT = 1;
 let activeRequests = 0;
 
+async function autoDetectModel() {
+  try {
+    const res = await fetch('http://127.0.0.1:1234/v1/models', {
+      signal: AbortSignal.timeout(3000)
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const models = data?.data;
+    if (!models || models.length === 0) return null;
+    return models[0].id; // 回傳第一個已載入的模型
+  } catch (e) {
+    return null;
+  }
+}
+
 async function getSettings() {
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     chrome.storage.sync.get(
-      {
-        serverUrl: DEFAULT_SERVER_URL,
-        modelName: DEFAULT_MODEL_NAME,
-        modelPrompts: {}
-      },
-      (items) => {
-        const modelName = items.modelName || DEFAULT_MODEL_NAME;
+      { serverUrl: DEFAULT_SERVER_URL, modelName: '', modelPrompts: {} },
+      async (items) => {
+        let modelName = items.modelName;
+
+        // 若未設定模型，自動偵測 LM Studio 已載入的模型
+        if (!modelName) {
+          modelName = await autoDetectModel() || DEFAULT_MODEL_NAME;
+        }
+
         const modelPrompts = items.modelPrompts || {};
         const systemPrompt = modelPrompts[modelName] || DEFAULT_SYSTEM_PROMPT;
 
@@ -39,33 +56,8 @@ async function getSettings() {
   });
 }
 
-function isTranslateGemmaModel(modelName) {
-  return modelName === "translategemma-4b-it";
-}
-
 function buildRequestBody(modelName, systemPrompt, text, stream = false) {
   const normalizedText = text.trim();
-
-  if (isTranslateGemmaModel(modelName)) {
-    return {
-      model: modelName,
-      messages: [
-        {
-          role: "user",
-          content: [
-            {
-              type: "text",
-              source_lang_code: "en",
-              target_lang_code: "zh-TW",
-              text: normalizedText
-            }
-          ]
-        }
-      ],
-      stream,
-      max_tokens: 80
-    };
-  }
 
   return {
     model: modelName,

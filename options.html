@@ -3,184 +3,38 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Farming Subtitles 設定</title>
+  <title>Farming Subtitles 設定 Setting</title>
   <style>
-    body {
-      font-family: 'PingFang TC', 'Microsoft JhengHei', Arial, sans-serif;
-      max-width: 520px;
-      margin: 40px auto;
-      padding: 0 24px;
-      color: #222;
-      background: #f9f9f9;
-    }
+  body {
+    font-family: 'PingFang TC', 'Microsoft JhengHei', Arial, sans-serif;
+    max-width: 520px;
+    margin: 40px auto;
+    padding: 0 24px;
+    color: #222;
+    background: #f9f9f9;
+  }
 
-    h1 {
-      font-size: 22px;
-      margin-bottom: 6px;
-    }
+  h1 {
+    font-size: 22px;
+    margin-bottom: 6px;
+  }
 
-    .subtitle {
-      font-size: 13px;
-      color: #888;
-      margin-bottom: 32px;
-    }
-
-    label {
-      display: block;
-      font-size: 14px;
-      font-weight: 600;
-      margin-bottom: 6px;
-      margin-top: 20px;
-    }
-
-    input[type="text"],
-    select {
-      width: 100%;
-      padding: 10px 12px;
-      font-size: 14px;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      box-sizing: border-box;
-      background: #fff;
-    }
-
-    input[type="text"]:focus,
-    select:focus {
-      outline: none;
-      border-color: #4caf50;
-    }
-
-    .hint {
-      font-size: 12px;
-      color: #aaa;
-      margin-top: 4px;
-    }
-
-    .button-row {
-      margin-top: 28px;
-      display: flex;
-      gap: 12px;
-      align-items: center;
-    }
-
-    button {
-      padding: 10px 20px;
-      font-size: 14px;
-      font-weight: 600;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-
-    #saveBtn {
-      background: #4caf50;
-      color: #fff;
-    }
-
-    #saveBtn:hover {
-      background: #43a047;
-    }
-
-    #testBtn {
-      background: #fff;
-      color: #333;
-      border: 1px solid #ddd;
-    }
-
-    #testBtn:hover {
-      background: #f0f0f0;
-    }
-
-    #status {
-      font-size: 13px;
-      margin-top: 16px;
-      padding: 10px 14px;
-      border-radius: 8px;
-      display: none;
-    }
-
-    #status.success {
-      background: #e8f5e9;
-      color: #2e7d32;
-      display: block;
-    }
-
-    #status.error {
-      background: #ffebee;
-      color: #c62828;
-      display: block;
-    }
-
-    #status.testing {
-      background: #fff8e1;
-      color: #f57f17;
-      display: block;
-    }
-
-    .divider {
-      border: none;
-      border-top: 1px solid #eee;
-      margin: 32px 0;
-    }
-
-    .section-title {
-      font-size: 16px;
-      font-weight: 700;
-      margin-bottom: 4px;
-    }
-
-    .hidden {
-      display: none;
-    }
-  </style>
-</head>
-<body>
-  <h1>🌾 Farming Subtitles</h1>
-  <p class="subtitle">Local AI subtitle translation for YouTube</p>
-
-  <div class="section-title">LM Studio 設定 / LM Studio Settings</div>
-
-  <label for="serverUrl">Server URL</label>
-  <input
-    type="text"
-    id="serverUrl"
-    placeholder="http://127.0.0.1:1234"
-  />
-  <p class="hint">LM Studio 本機 server 的地址，預設為 http://127.0.0.1:1234</p>
-
-  <label for="modelPreset">Model / 模型</label>
-  <select id="modelPreset">
-    <option value="phi-4-mini-instruct">Phil（Phi-4-mini-instruct）</option>
-    <option value="translategemma-4b-it">Gemma（TranslateGemma 4B）</option>
-    <option value="other">Other（自訂模型）</option>
-  </select>
-  <p class="hint">選擇預設模型，或選 Other 自訂 model id</p>
-
-  <label for="systemPrompt">System Prompt</label>
-<textarea
-  id="systemPrompt"
-  rows="6"
-  style="
-    width: 100%;
-    padding: 10px 12px;
+  .subtitle {
     font-size: 13px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    box-sizing: border-box;
-    background: #fff;
-    font-family: monospace;
-    resize: vertical;
-  "
-  placeholder="Enter system prompt for this model..."
-></textarea>
-<p class="hint">每個模型可以有各自的 Prompt，切換模型時自動載入 / Each model can have its own prompt</p>
+    color: #888;
+    margin-bottom: 32px;
+  }
 
-<label for="promptTemplate" style="margin-top: 16px;">
-  常用範本 / Quick Templates
-</label>
-<select
-  id="promptTemplate"
-  style="
+  label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    margin-top: 20px;
+  }
+
+  input[type="text"],
+  select {
     width: 100%;
     padding: 10px 12px;
     font-size: 14px;
@@ -188,45 +42,213 @@
     border-radius: 8px;
     box-sizing: border-box;
     background: #fff;
+  }
+
+  input[type="text"]:focus,
+  select:focus {
+    outline: none;
+    border-color: #4caf50;
+  }
+
+  .hint {
+    font-size: 12px;
+    color: #aaa;
+    margin-top: 4px;
+  }
+
+  .button-row {
+    margin-top: 28px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  button {
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+
+  #saveBtn {
+    background: #4caf50;
+    color: #fff;
+  }
+
+  #saveBtn:hover {
+    background: #43a047;
+  }
+
+  #testBtn {
+    background: #fff;
+    color: #333;
+    border: 1px solid #ddd;
+  }
+
+  #testBtn:hover {
+    background: #f0f0f0;
+  }
+
+  #deleteModelBtn {
+    background: #fff;
+    color: #c62828;
+    border: 1px solid #c62828;
+  }
+
+  #deleteModelBtn:hover {
+    background: #ffebee;
+  }
+
+  #addModelBtn {
+    background: #fff;
+    color: #1976d2;
+    border: 1px solid #1976d2;
+  }
+
+  #addModelBtn:hover {
+    background: #e3f2fd;
+  }
+
+  #status {
+    font-size: 13px;
+    margin-top: 16px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    display: none;
+  }
+
+  #status.success {
+    background: #e8f5e9;
+    color: #2e7d32;
+    display: block;
+  }
+
+  #status.error {
+    background: #ffebee;
+    color: #c62828;
+    display: block;
+  }
+
+  #status.testing {
+    background: #fff8e1;
+    color: #f57f17;
+    display: block;
+  }
+
+  .divider {
+    border: none;
+    border-top: 1px solid #eee;
+    margin: 32px 0;
+  }
+
+  .section-title {
+    font-size: 16px;
+    font-weight: 700;
     margin-bottom: 4px;
-  "
->
-  <option value="">-- 選擇範本 / Select Template --</option>
-  <option value="zh-TW">繁體中文（預設）</option>
-  <option value="zh-CN">簡體中文</option>
-  <option value="ja">日文</option>
-  <option value="ko">韓文</option>
-  <option value="fr">法文</option>
-  <option value="es">西班牙文</option>
-</select>
+  }
 
-<p class="hint">選擇後會自動填入上方 Prompt 欄位，記得點儲存 / Selecting will fill the prompt above, remember to save</p>
+  .hidden {
+    display: none;
+  }
 
-  <div id="customModelWrap" class="hidden">
-    <label for="customModelName">Custom Model ID / 自訂模型名稱</label>
-    <input
-      type="text"
-      id="customModelName"
-      placeholder="例如：my-model-name"
-    />
-    <p class="hint">請輸入 LM Studio API 可識別的 model 名稱</p>
-  </div>
+  .add-model-box {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    padding: 16px;
+    margin-top: 12px;
+  }
 
+  .add-model-box label {
+    margin-top: 10px;
+  }
+
+  .add-model-box label:first-child {
+    margin-top: 0;
+  }
+
+  .add-model-box .button-row {
+    margin-top: 16px;
+  }
+</style>
+</head>
+<body>
+  <h1>🌾 Farming Subtitles</h1>
+  <p class="subtitle">Local AI subtitle translation for YouTube</p>
+
+  <!-- LM Studio 設定 -->
+  <div class="section-title">LM Studio 設定</div>
+
+  abel for="serverUrl">Server URL</label>
+  <input type="text" id="serverUrl" placeholder="http://127.0.0.1:1234">
+  <p class="hint">LM Studio 預設伺服器 / Default Server：http://127.0.0.1:1234</p>
+
+  <!-- 模型選擇 -->
+  abel for="modelPreset">選擇模型 / Select Model</label>
+  <select id="modelPreset"></select>
+  <p class="hint">選擇已儲存的模型，或新增自訂模型 / Select a saved model or add a custom one</p>
+
+  <!-- System Prompt -->
+  abel for="systemPrompt">System Prompt</label>
+  <textarea id="systemPrompt" rows="6"
+    style="width:100%; padding:10px 12px; font-size:13px; border:1px solid #ddd;
+           border-radius:8px; box-sizing:border-box; background:#fff;
+           font-family:monospace; resize:vertical;"
+    placeholder="輸入此模型的 system prompt... / Enter system prompt for this model..."></textarea>
+
+  abel for="promptTemplate" style="margin-top:16px;">快速範本 / Quick Templates</label>
+  <select id="promptTemplate">
+  <option value="">— 選擇範本 / Select Template —</option>
+  <option value="zh-TW">繁體中文 / Traditional Chinese</option>
+  <option value="zh-CN">簡體中文 / Simplified Chinese</option>
+  <option value="ja">日文 / 日本語</option>
+  <option value="ko">韓文 / 한국어</option>
+  <option value="fr">法文 / Français</option>
+  <option value="es">西班牙文 / Español</option>
+  </select>
+  <p class="hint">選擇後會自動填入上方 prompt，記得按儲存</p>
+
+  <!-- 主要按鈕 -->
   <div class="button-row">
-    <button id="saveBtn">儲存設定 / Save</button>
-    <button id="testBtn">測試連線 / Test Connection</button>
+    <button id="saveBtn">💾 儲存 / Save</button>
+<button id="testBtn">🔌 測試連線 / Test Connection</button>
+<button id="deleteModelBtn">🗑 刪除此模型 / Delete Model</button>
+<button id="addModelBtn">➕ 新增模型 / Add Model</button>
   </div>
 
   <div id="status"></div>
 
-  <hr class="divider" />
+  <hr class="divider">
 
-  <div class="section-title">📖 快速設定指南 / Quick Setup Guide</div>
-  <ol style="font-size:13px; color:#555; line-height:2; padding-left: 20px;">
-    <li>下載並安裝 <a href="https://lmstudio.ai" target="_blank" rel="noopener noreferrer">LM Studio</a></li>
-    <li>在 LM Studio 載入你要使用的模型</li>
-    <li>進入 Developer 頁，啟動 server</li>
-    <li>回到這裡選擇模型後，點「測試連線」確認設定正確</li>
+  <!-- 新增模型 -->
+  <div class="section-title">新增自訂模型 / Add Custom Model</div>
+  <p class="hint" style="margin-top:4px;">在 LM Studio 中找到模型的 API Name，填入下方新增 / Find the API Name in LM Studio → My Models, then fill in below.</p>
+
+  <div class="add-model-box">
+    abel for="newModelDisplayName">顯示名稱 / Display Name</label>
+    <input type="text" id="newModelDisplayName" placeholder="例如：Gemma 4 E4B">
+
+    abel for="newModelApiName">API Model Name</label>
+    <input type="text" id="newModelApiName" placeholder="例如：gemma-4-e4b-it">
+    <p class="hint">在 LM Studio → My Models 中找到 API Name</p>
+
+    <div class="button-row">
+      <button id="addModelBtn">➕ 新增模型 / Add Model</button>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- 使用說明 -->
+  <div class="section-title">快速設定指南 / Quick Setup Guide</div>
+  <ol style="font-size:13px; color:#555; line-height:2; padding-left:20px;">
+    >下載並安裝 / Download and install <a href="https://lmstudio.ai" target="_blank" rel="noopener noreferrer">LM Studio</a></li>
+    >在 LM Studio 中下載並載入模型 / Download and load a model in LM Studio</li>
+    >啟動 Developer Server / Start the Developer Server</li>
+    >在上方新增模型並儲存設定 / Add a model above and save your settings</li>
   </ol>
 
   <script src="options.js"></script>

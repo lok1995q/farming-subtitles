@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Farming Subtitles",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Local AI subtitle translation for YouTube. Safe, private, and steady. Just like farming.",
   "permissions": [
     "activeTab",
@@ -12,6 +12,18 @@
   "host_permissions": [
     "http://127.0.0.1:1234/*"
   ],
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_title": "Farming Subtitles",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon48.png"
+    }
+  },
   "options_page": "options.html",
   "background": {
     "service_worker": "background.js"
