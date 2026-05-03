@@ -182,24 +182,24 @@
   <!-- LM Studio 設定 -->
   <div class="section-title">LM Studio 設定</div>
 
-  abel for="serverUrl">Server URL</label>
+  <label for="serverUrl">Server URL</label>
   <input type="text" id="serverUrl" placeholder="http://127.0.0.1:1234">
   <p class="hint">LM Studio 預設伺服器 / Default Server：http://127.0.0.1:1234</p>
 
   <!-- 模型選擇 -->
-  abel for="modelPreset">選擇模型 / Select Model</label>
+  <1abel for="modelPreset">選擇模型 / Select Model</label>
   <select id="modelPreset"></select>
   <p class="hint">選擇已儲存的模型，或新增自訂模型 / Select a saved model or add a custom one</p>
 
   <!-- System Prompt -->
-  abel for="systemPrompt">System Prompt</label>
+  <1abel for="systemPrompt">System Prompt</label>
   <textarea id="systemPrompt" rows="6"
     style="width:100%; padding:10px 12px; font-size:13px; border:1px solid #ddd;
            border-radius:8px; box-sizing:border-box; background:#fff;
            font-family:monospace; resize:vertical;"
     placeholder="輸入此模型的 system prompt... / Enter system prompt for this model..."></textarea>
 
-  abel for="promptTemplate" style="margin-top:16px;">快速範本 / Quick Templates</label>
+  <label for="promptTemplate" style="margin-top:16px;">快速範本 / Quick Templates</label>
   <select id="promptTemplate">
   <option value="">— 選擇範本 / Select Template —</option>
   <option value="zh-TW">繁體中文 / Traditional Chinese</option>
@@ -228,10 +228,10 @@
   <p class="hint" style="margin-top:4px;">在 LM Studio 中找到模型的 API Name，填入下方新增 / Find the API Name in LM Studio → My Models, then fill in below.</p>
 
   <div class="add-model-box">
-    abel for="newModelDisplayName">顯示名稱 / Display Name</label>
+    <label for="newModelDisplayName">顯示名稱 / Display Name</label>
     <input type="text" id="newModelDisplayName" placeholder="例如：Gemma 4 E4B">
 
-    abel for="newModelApiName">API Model Name</label>
+    <label for="newModelApiName">API Model Name</label>
     <input type="text" id="newModelApiName" placeholder="例如：gemma-4-e4b-it">
     <p class="hint">在 LM Studio → My Models 中找到 API Name</p>
 
@@ -245,10 +245,10 @@
   <!-- 使用說明 -->
   <div class="section-title">快速設定指南 / Quick Setup Guide</div>
   <ol style="font-size:13px; color:#555; line-height:2; padding-left:20px;">
-    >下載並安裝 / Download and install <a href="https://lmstudio.ai" target="_blank" rel="noopener noreferrer">LM Studio</a></li>
-    >在 LM Studio 中下載並載入模型 / Download and load a model in LM Studio</li>
-    >啟動 Developer Server / Start the Developer Server</li>
-    >在上方新增模型並儲存設定 / Add a model above and save your settings</li>
+    <li>下載並安裝 / Download and install <a href="https://lmstudio.ai" target="_blank" rel="noopener noreferrer">LM Studio</a></li>
+    <li>在 LM Studio 中下載並載入模型 / Download and load a model in LM Studio</li>
+    <li>啟動 Developer Server / Start the Developer Server</li>
+    <li>在上方新增模型並儲存設定 / Add a model above and save your settings</li>
   </ol>
 
   <script src="options.js"></script>

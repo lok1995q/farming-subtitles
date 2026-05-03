@@ -1,3 +1,16 @@
+const DEFAULT_SERVER_URL = "http://127.0.0.1:1234";
+const DEFAULT_MODEL_NAME = "phi-4-mini-instruct";
+const DEFAULT_SYSTEM_PROMPT = 
+"You are a subtitle translation tool. Translate the user's English subtitle text into natural, colloquial Traditional Chinese (繁體中文).Rules:1. Output MUST be in Traditional Chinese (繁體中文) only. Never use Simplified Chinese (简体中文).2. Keep proper nouns as-is: car models (e.g. RAV4, Civic, F-150), brand names, person names, and product names must NOT be translated.3. Translate the exact words used — do not paraphrase, summarize, or change the meaning. If the speaker says 'a little bit', translate '一點點', not '些許'.4. Do not add words that are not in the original, do not omit any words.5. Keep it concise and natural, as if spoken aloud.6. Output only the translated text, nothing else.";
+
+const DEFAULT_MODEL_PROMPTS = {
+  "phi-4-mini-instruct": DEFAULT_SYSTEM_PROMPT,
+  "gemma-4-e4b-it": DEFAULT_SYSTEM_PROMPT
+};
+const translationCache = new Map();
+const MAX_CONCURRENT = 1;
+let activeRequests = 0;
+
 chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.removeAll(() => {
     chrome.contextMenus.create({
@@ -6,19 +19,31 @@ chrome.runtime.onInstalled.addListener(() => {
       contexts: ["selection"]
     });
   });
+
+  chrome.storage.sync.get(
+    {
+      serverUrl: DEFAULT_SERVER_URL,
+      modelName: "",
+      modelPrompts: DEFAULT_MODEL_PROMPTS,
+      customModels: {}
+    },
+    (items) => {
+      chrome.storage.sync.set({
+        serverUrl: items.serverUrl || DEFAULT_SERVER_URL,
+        modelName: items.modelName || DEFAULT_MODEL_NAME,
+        modelPrompts: {
+          ...DEFAULT_MODEL_PROMPTS,
+          ...(items.modelPrompts || {})
+        },
+        customModels: items.customModels || {}
+      });
+    }
+  );
 });
-
-const DEFAULT_SERVER_URL = "http://127.0.0.1:1234";
-const DEFAULT_MODEL_NAME = "phi-4-mini-instruct";
-const DEFAULT_SYSTEM_PROMPT = "You are a subtitle translation tool. Translate the user's English subtitle text into natural, colloquial Traditional Chinese (繁體中文). Keep it concise and natural, as if spoken. Output only the translated text, nothing else.";
-
-const translationCache = new Map();
-const MAX_CONCURRENT = 1;
-let activeRequests = 0;
 
 async function autoDetectModel() {
   try {
-    const res = await fetch('http://127.0.0.1:1234/v1/models', {
+    const res = await fetch(`${serverUrl}/v1/models`, {
       signal: AbortSignal.timeout(3000)
     });
     if (!res.ok) return null;
@@ -32,22 +57,34 @@ async function autoDetectModel() {
 }
 
 async function getSettings() {
-  return new Promise(resolve => {
+  return new Promise((resolve) => {
     chrome.storage.sync.get(
-      { serverUrl: DEFAULT_SERVER_URL, modelName: '', modelPrompts: {} },
+      {
+        serverUrl: DEFAULT_SERVER_URL,
+        modelName: "",
+        modelPrompts: DEFAULT_MODEL_PROMPTS,
+        customModels: {}
+      },
       async (items) => {
-        let modelName = items.modelName;
+        const serverUrl = items.serverUrl || DEFAULT_SERVER_URL;
+        let modelName = items.modelName || "";
 
-        // 若未設定模型，自動偵測 LM Studio 已載入的模型
         if (!modelName) {
-          modelName = await autoDetectModel() || DEFAULT_MODEL_NAME;
+          modelName = (await autoDetectModel(serverUrl)) || DEFAULT_MODEL_NAME;
         }
 
-        const modelPrompts = items.modelPrompts || {};
-        const systemPrompt = modelPrompts[modelName] || DEFAULT_SYSTEM_PROMPT;
+        const modelPrompts = {
+          ...DEFAULT_MODEL_PROMPTS,
+          ...(items.modelPrompts || {})
+        };
+
+        const systemPrompt =
+          modelPrompts[modelName] ||
+          DEFAULT_MODEL_PROMPTS[modelName] ||
+          DEFAULT_SYSTEM_PROMPT;
 
         resolve({
-          serverUrl: items.serverUrl || DEFAULT_SERVER_URL,
+          serverUrl,
           modelName,
           systemPrompt
         });

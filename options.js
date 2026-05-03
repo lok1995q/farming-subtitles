@@ -1,6 +1,5 @@
 const DEFAULT_SERVER_URL = 'http://127.0.0.1:1234'
 const DEFAULT_MODEL_API_NAME = 'phi-4-mini-instruct'
-const DEFAULT_PROMPT = PROMPT_TEMPLATES['zh-TW']
 
 const PROMPT_TEMPLATES = {
   'zh-TW': `You are a subtitle translation tool. Translate the user's English subtitle text into natural, colloquial Traditional Chinese (繁體中文).
@@ -64,11 +63,23 @@ Rules:
 6. Output only the translated text, nothing else.`
 }
 
+const DEFAULT_PROMPT = PROMPT_TEMPLATES['zh-TW']
+
 // 預設內建模型（API Name → 顯示名稱）
 const BUILT_IN_MODELS = {
   'phi-4-mini-instruct': 'Phi-4-Mini-Instruct',
   'gemma-4-e4b-it': 'Gemma 4 E4B'
 }
+
+const DEFAULT_SETTINGS = {
+  serverUrl: DEFAULT_SERVER_URL,
+  modelName: DEFAULT_MODEL_API_NAME,
+  modelPrompts: {
+    [DEFAULT_MODEL_API_NAME]: DEFAULT_PROMPT,
+    "gemma-4-e4b-it": DEFAULT_PROMPT
+  },
+  customModels: {}
+};
 
 // DOM 元素
 const serverUrlInput = document.getElementById('serverUrl')
@@ -92,13 +103,17 @@ function getCurrentModelApiName() {
   return modelPresetSelect.value
 }
 
+function getPromptForModel(apiName) {
+  return modelPrompts[apiName] || DEFAULT_PROMPT;
+}
+
 // 重新建立下拉選單
 function rebuildModelSelect(selectedApiName) {
   modelPresetSelect.innerHTML = ''
 
   // 內建模型
   const builtInGroup = document.createElement('optgroup')
-  builtInGroup.label = '內建模型 / Built-in Models'
+  builtInGroup.label = '內建模型 / Built-in Models';
   Object.entries(BUILT_IN_MODELS).forEach(([apiName, displayName]) => {
     const opt = document.createElement('option')
     opt.value = apiName
